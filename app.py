@@ -37,32 +37,13 @@ if uploaded_file is not None:
     total_df = pd.DataFrame({'Bus': bus_columns, 'Manhours': total_hours.values})
     avg_manhours = total_df['Manhours'].mean()
 
-    # Begin predictive calculation
-    st.sidebar.header("Input Parameters")
-    current_output = st.sidebar.number_input("Current Monthly Output (buses)", min_value=1, value=7)
-    target_output = st.sidebar.number_input("Target Monthly Output (buses)", min_value=1, value=10)
-    STU = st.sidebar.number_input("Standard Time per Unit (minutes)", min_value=1, value=51840)
-    working_days = st.sidebar.number_input("Working Days per Month", min_value=1, value=21)
-    hours_per_day = st.sidebar.number_input("Work Hours per Day", min_value=1, value=8)
-    absenteeism_rate = st.sidebar.slider("Absenteeism Rate (%)", min_value=0, max_value=20, value=5) / 100
-    indirect_ratio = st.sidebar.slider("Indirect Manpower Ratio (%)", min_value=0, max_value=50, value=10) / 100
-
-    AWH = working_days * hours_per_day
-    efficiency_factor = current_output / target_output
-    EHE = AWH * efficiency_factor * (1 - absenteeism_rate)
-    current_direct_staff = df["Number of people"].sum()
-    required_direct_manpower = (target_output * STU / 60) / EHE
-    required_indirect_manpower = required_direct_manpower * indirect_ratio
-    total_required_manpower = required_direct_manpower + required_indirect_manpower
-
-    # Group by Station and Process
-    staffing_summary = df.groupby(['Station', 'Process'])['Number of people'].sum().reset_index()
-    staffing_summary["Current_Proportion"] = staffing_summary["Number of people"] / staffing_summary["Number of people"].sum()
-    staffing_summary["Predicted_Number_of_People"] = staffing_summary["Current_Proportion"] * required_direct_manpower
-    staffing_summary["Predicted_Number_of_People"] = staffing_summary["Predicted_Number_of_People"].round(2)
-
-    # Tabs
-    tab1, tab2, tab3 = st.tabs(["Summary", "Process time analysis", "Human resource allocation gaps"])
+    # Define tabs
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "Summary", 
+        "Process time analysis", 
+        "Human resource allocation gaps", 
+        "📊 Predictive Allocation"
+    ])
 
     # -------------------- TAB 1 --------------------
     with tab1:
@@ -113,7 +94,6 @@ if uploaded_file is not None:
         for _, row in process_avg_df.head(7).iterrows():
             st.markdown(f"• {row['Process']}: {row['Avg_Time_Per_Process']:.1f} hrs")
 
-        # Station-specific analysis
         if 'Station' in df.columns:
             station_options = df['Station'].dropna().unique().tolist()
             if station_options:
@@ -158,9 +138,6 @@ if uploaded_file is not None:
         gap_df = gap_df[gap_df['Process'].str.strip() != '']
         gap_df = gap_df.sort_values(by='Manhours per person', ascending=False)
 
-        # Merge predicted values
-        gap_df = pd.merge(gap_df, staffing_summary[['Station', 'Process', 'Predicted_Number_of_People']], on=['Station', 'Process'], how='left')
-
         station_colors = {
             'Trim': 'red',
             'Logistics': 'blue',
@@ -189,12 +166,61 @@ if uploaded_file is not None:
         )
 
         st.markdown("**🚨 Top 7 Processes with highest Human resource allocation gaps:**")
-        top_gap_df = gap_df.head(7)[['Station', 'Process', 'Manhours per person', 'Number of people', 'Predicted_Number_of_People']].reset_index(drop=True)
+        top_gap_df = gap_df.head(7)[['Station', 'Process', 'Manhours per person', 'Number of people']].reset_index(drop=True)
         st.dataframe(top_gap_df.style.format({
             'Manhours per person': '{:.2f}',
-            'Number of people': '{:.0f}',
-            'Predicted_Number_of_People': '{:.2f}'
+            'Number of people': '{:.0f}'
         }))
+
+    # -------------------- TAB 4 --------------------
+    with tab4:
+        st.subheader("📊 Predictive Manpower Allocation")
+
+        # Sidebar shows up only when tab4 is active
+        with st.sidebar:
+            st.header("Prediction Parameters")
+            current_output = st.number_input("Current Monthly Output (buses)", min_value=1, value=7)
+            target_output = st.number_input("Target Monthly Output (buses)", min_value=1, value=10)
+            STU = st.number_input("Standard Time per Unit (minutes)", min_value=1, value=51840)
+            working_days = st.number_input("Working Days per Month", min_value=1, value=21)
+            hours_per_day = st.number_input("Work Hours per Day", min_value=1, value=8)
+            absenteeism_rate = st.slider("Absenteeism Rate (%)", min_value=0, max_value=20, value=5) / 100
+            indirect_ratio = st.slider("Indirect Manpower Ratio (%)", min_value=0, max_value=50, value=10) / 100
+
+        AWH = working_days * hours_per_day
+        efficiency_factor = current_output / target_output
+        EHE = AWH * efficiency_factor * (1 - absenteeism_rate)
+        current_direct_staff = df["Number of people"].sum()
+        required_direct_manpower = (target_output * STU / 60) / EHE
+        required_indirect_manpower = required_direct_manpower * indirect_ratio
+        total_required_manpower = required_direct_manpower + required_indirect_manpower
+
+        staffing_summary = df.groupby(['Station', 'Process'])['Number of people'].sum().reset_index()
+        staffing_summary["Current_Proportion"] = staffing_summary["Number of people"] / staffing_summary["Number of people"].sum()
+        staffing_summary["Predicted_Number_of_People"] = staffing_summary["Current_Proportion"] * required_direct_manpower
+        staffing_summary["Predicted_Number_of_People"] = staffing_summary["Predicted_Number_of_People"].round(2)
+
+        st.subheader("📈 Staffing Distribution by Process and Station")
+        fig5 = px.bar(
+            staffing_summary.sort_values(by="Number of people", ascending=False),
+            x="Process", y="Number of people", color="Station",
+            title="Current Staffing by Process and Station", text="Number of people"
+        )
+        fig5.update_layout(xaxis_tickangle=-45)
+        st.plotly_chart(fig5, use_container_width=True)
+
+        st.subheader("📐 Summary of Prediction")
+        st.markdown(f"""
+        - Current Direct Staff: **{int(current_direct_staff)}**  
+        - Target Output: **{target_output} buses**  
+        - Required Direct Manpower: **{required_direct_manpower:.2f}**  
+        - Required Indirect Manpower: **{required_indirect_manpower:.2f}**  
+        - Total Required Manpower: **{total_required_manpower:.2f}**
+        """)
+
+        st.subheader("🔮 Predicted Staffing by Station and Process")
+        st.dataframe(staffing_summary[["Station", "Process", "Number of people", "Predicted_Number_of_People"]],
+                     use_container_width=True)
 
 else:
     st.info("Please upload a valid Excel file to proceed.")
