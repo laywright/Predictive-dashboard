@@ -153,10 +153,10 @@ if uploaded_file is not None:
 
     # -------------------- TAB 4 --------------------
     with tab4:
-        st.subheader("📊 Predictive Manpower Allocation")
+        st.subheader("Predictive Manpower Allocation")
 
         # Manual input within tab4
-        st.markdown("### 🔧 Prediction Parameters")
+        st.markdown("###  Prediction Parameters")
         current_output = st.number_input("Current Monthly Output (buses)", min_value=1, value=7)
         target_output = st.number_input("Target Monthly Output (buses)", min_value=1, value=10)
         STU = st.number_input("Standard Time per Unit (minutes)", min_value=1, value=51840)
@@ -178,7 +178,7 @@ if uploaded_file is not None:
         pred_staffing_summary["Predicted_Number_of_People"] = pred_staffing_summary["Current_Proportion"] * required_direct_manpower
         pred_staffing_summary["Predicted_Number_of_People"] = pred_staffing_summary["Predicted_Number_of_People"].round(2)
 
-        st.markdown("### 📐 Summary of Prediction")
+        st.markdown("### Summary of Prediction")
         st.markdown(f"""
         - Current Direct Staff: **{int(current_direct_staff)}**  
         - Target Output: **{target_output} buses**  
@@ -187,7 +187,7 @@ if uploaded_file is not None:
         - **Total Required Manpower: {total_required_manpower:.2f}**
         """)
 
-        st.markdown("### 🔮 Predicted Staffing by Station and Process")
+        st.markdown("### Predicted Staffing by Station and Process")
         st.dataframe(pred_staffing_summary[["Station", "Process", "Number of people", "Predicted_Number_of_People"]])
 
 else:
