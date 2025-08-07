@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 from scipy import stats
+import math
 
 # Page configuration
 st.set_page_config(
@@ -56,7 +57,7 @@ if uploaded_file is not None:
         for _, row in top5.iterrows():
             st.markdown(f"• {row['Bus']}: {row['Manhours']:.1f} manhours")
 
-        st.download_button("📥  Download total manhours CSV",
+        st.download_button("📅  Download total manhours CSV",
                            total_df.to_csv(index=False).encode(),
                            file_name="total_manhours.csv", mime='text/csv')
 
@@ -111,17 +112,6 @@ if uploaded_file is not None:
     with tab3:
         st.subheader("Staffing distribution")
         staffing_summary = df.groupby(['Station', 'Process'])['Number of people'].sum().reset_index()
-        fig5 = px.bar(staffing_summary.sort_values(by="Number of people", ascending=False),
-                      x="Process", y="Number of people", color="Station",
-                      title="Current Staffing by Process and Station", text="Number of people")
-        fig5.update_layout(xaxis_tickangle=-45)
-        st.plotly_chart(fig5, use_container_width=True)
-
-        gap_df = df[['Station', 'Process', 'Avg_Manhours', 'Number of people', 'Manhours per person']].copy()
-        gap_df = gap_df.dropna(subset=['Process'])
-        gap_df = gap_df[gap_df['Process'].str.strip() != '']
-        gap_df = gap_df.sort_values(by='Manhours per person', ascending=False)
-
         station_colors = {
             'Trim': 'red',
             'Logistics': 'blue',
@@ -129,6 +119,18 @@ if uploaded_file is not None:
             'Body': 'orange',
             'Metal Finish': 'teal'
         }
+        
+        fig5 = px.bar(staffing_summary.sort_values(by="Number of people", ascending=False),
+                      x="Process", y="Number of people", color="Station",
+                      title="Current Staffing by Process and Station", text="Number of people",
+                      color_discrete_map=station_colors)
+        fig5.update_layout(xaxis_tickangle=-45)
+        st.plotly_chart(fig5, use_container_width=True)
+
+        gap_df = df[['Station', 'Process', 'Avg_Manhours', 'Number of people', 'Manhours per person']].copy()
+        gap_df = gap_df.dropna(subset=['Process'])
+        gap_df = gap_df[gap_df['Process'].str.strip() != '']
+        gap_df = gap_df.sort_values(by='Manhours per person', ascending=False)
         gap_df['Color'] = gap_df['Station'].map(station_colors)
 
         fig4 = px.bar(gap_df, x='Process', y='Manhours per person', color='Station',
@@ -140,7 +142,7 @@ if uploaded_file is not None:
         fig4.update_layout(xaxis_tickangle=-45, width=1200, height=600, hovermode="x unified")
         st.plotly_chart(fig4, use_container_width=True)
 
-        st.download_button("📥  Download Human resource gaps CSV",
+        st.download_button("📅  Download Human resource gaps CSV",
                            gap_df.to_csv(index=False).encode(),
                            file_name="hr_gaps.csv", mime='text/csv')
 
@@ -155,7 +157,6 @@ if uploaded_file is not None:
     with tab4:
         st.subheader("Predictive Manpower Allocation")
 
-        # Manual input within tab4
         st.markdown("###  Prediction Parameters")
         current_output = st.number_input("Current Monthly Output (buses)", min_value=1, value=7)
         target_output = st.number_input("Target Monthly Output (buses)", min_value=1, value=10)
@@ -171,12 +172,12 @@ if uploaded_file is not None:
         current_direct_staff = df["Number of people"].sum()
         required_direct_manpower = (target_output * STU / 60) / EHE
         required_indirect_manpower = required_direct_manpower * indirect_ratio
-        total_required_manpower = required_direct_manpower + required_indirect_manpower
+        total_required_manpower = math.ceil(required_direct_manpower + required_indirect_manpower)
 
         pred_staffing_summary = df.groupby(['Station', 'Process'])['Number of people'].sum().reset_index()
         pred_staffing_summary["Current_Proportion"] = pred_staffing_summary["Number of people"] / pred_staffing_summary["Number of people"].sum()
         pred_staffing_summary["Predicted_Number_of_People"] = pred_staffing_summary["Current_Proportion"] * required_direct_manpower
-        pred_staffing_summary["Predicted_Number_of_People"] = pred_staffing_summary["Predicted_Number_of_People"].round(2)
+        pred_staffing_summary["Predicted_Number_of_People"] = pred_staffing_summary["Predicted_Number_of_People"].apply(lambda x: math.ceil(x))
 
         st.markdown("### Summary of Prediction")
         st.markdown(f"""
@@ -184,7 +185,7 @@ if uploaded_file is not None:
         - Target Output: **{target_output} buses**  
         - Required Direct Manpower: **{required_direct_manpower:.2f}**  
         - Required Indirect Manpower: **{required_indirect_manpower:.2f}**  
-        - **Total Required Manpower: {total_required_manpower:.2f}**
+        - **Total Required Manpower: {total_required_manpower}**
         """)
 
         st.markdown("### Predicted Staffing by Station and Process")
