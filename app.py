@@ -23,7 +23,7 @@ if uploaded_file is not None:
     df['Number of people'] = pd.to_numeric(df.get('Number of people', pd.Series(dtype=float)), errors='coerce')
 
     # Dynamically detect bus columns
-    bus_columns = [col for col in df.columns if col.startswith('Bus') and not any(bus in col for bus in ['Bus 21', 'Bus 22', 'Bus 23', 'Bus 24'])]
+    bus_columns = [col for col in df.columns if col.startswith('Bus')]
 
     df['Avg_Time_Per_Process'] = df[bus_columns].mean(axis=1)
     df['Variance'] = df[bus_columns].var(axis=1)
