@@ -55,21 +55,11 @@ if uploaded_file:
     # 📐 Equation-Based Summary
     st.subheader("📊 Manpower Calculation Summary")
     st.markdown(f"""
-    **Equations Used:**
-
-    - AWH = Working Days × Hours per Day  
-    - Efficiency Factor = Current Output / Target Output  
-    - EHE = AWH × Efficiency × (1 - Absenteeism Rate)  
-    - Required Direct = (Target × STU / 60) / EHE  
-    - Required Indirect = Direct × Indirect Ratio  
-    - Total Required = Direct + Indirect
 
     **Results:**
 
     - Current Direct Staff: {int(current_direct_staff)}  
     - Target Output: {target_output} buses  
-    - Efficiency Factor: {efficiency_factor:.2f}  
-    - Effective Hours per Employee: {EHE:.2f}  
     - Required Direct Manpower: {required_direct_manpower:.2f}  
     - Required Indirect Manpower: {required_indirect_manpower:.2f}  
     - Total Required Manpower: {total_required_manpower:.2f}
@@ -79,18 +69,6 @@ if uploaded_file:
     st.subheader("🔮 Predicted Staffing by Station and Process")
     st.dataframe(staffing_summary[["Station", "Process", "Number of people", "Predicted_Number_of_People"]],
                  use_container_width=True)
-
-    # 📈 Predicted vs Current Chart
-    fig2 = px.bar(
-        staffing_summary,
-        x="Process",
-        y=["Number of people", "Predicted_Number_of_People"],
-        barmode="group",
-        color="Station",
-        title="Predicted vs Current Staffing by Process"
-    )
-    fig2.update_layout(xaxis_tickangle=-45)
-    st.plotly_chart(fig2, use_container_width=True)
 
 else:
     st.info("Please upload a valid Excel file to begin.")
