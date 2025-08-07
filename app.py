@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
-from scipy import stats
 import math
 
 # Page configuration
@@ -18,12 +17,14 @@ st.title("🚌 BasiGo Manpower Dashboard")
 uploaded_file = st.file_uploader("Upload the Excel file", type=["xlsx"])
 
 if uploaded_file is not None:
-    # Load and clean data
+    # Load data
     df = pd.read_excel(uploaded_file, sheet_name='Manhours')
     df = df.dropna(how='all').rename(columns=lambda x: str(x).strip())
     df['Number of people'] = pd.to_numeric(df.get('Number of people', pd.Series(dtype=float)), errors='coerce')
 
-    # Extract bus columns excluding Bus 21–24
+    # Dynamically detect bus columns
+    bus_columns = [col for col in df.columns if col.startswith('Bus') and not any(bus in col for bus in ['Bus 21', 'Bus 22', 'Bus 23', 'Bus 24'])]
+
     df['Avg_Time_Per_Process'] = df[bus_columns].mean(axis=1)
     df['Variance'] = df[bus_columns].var(axis=1)
     df['Avg_Manhours'] = df[bus_columns].mean(axis=1)
@@ -126,7 +127,7 @@ if uploaded_file is not None:
         fig5.update_layout(xaxis_tickangle=-45)
         st.plotly_chart(fig5, use_container_width=True)
 
-        # 👇 New insights block here
+        # 🔍 Insights section
         st.markdown("### 🔍 Insights from Current Staffing Distribution")
         most_staffed = staffing_summary.sort_values(by='Number of people', ascending=False).head(3)
         least_staffed = staffing_summary.sort_values(by='Number of people').head(3)
