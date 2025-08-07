@@ -144,7 +144,7 @@ if uploaded_file is not None:
                            gap_df.to_csv(index=False).encode(),
                            file_name="hr_gaps.csv", mime='text/csv')
 
-        st.markdown("**🚨 Top 7 Processes with highest Human resource allocation gaps:**")
+        st.markdown("**🚨 Top 7 Processes with highest Manhours per person:**")
         top_gap_df = gap_df.head(7)[['Station', 'Process', 'Manhours per person', 'Number of people']].reset_index(drop=True)
         st.dataframe(top_gap_df.style.format({
             'Manhours per person': '{:.2f}',
