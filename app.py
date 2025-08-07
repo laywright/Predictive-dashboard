@@ -35,7 +35,7 @@ if uploaded_file is not None:
     avg_manhours = total_df['Manhours'].mean()
 
     # Tabs
-    tab1, tab2, tab3, tab4 = st.tabs(["Summary", "Process time analysis", "Human resource allocation gaps","Predictive Manpower Allocation"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Summary", "Process time analysis", "Human resource allocation gaps", "Predictive Manpower Allocation"])
 
     # -------------------- TAB 1 --------------------
     with tab1:
@@ -45,12 +45,9 @@ if uploaded_file is not None:
         selected_bus = st.selectbox("View Manhours for specific bus", bus_columns)
         st.write(f"**{selected_bus} Manhours:** {total_hours[selected_bus]:.1f} hrs")
 
-        fig1 = px.bar(
-            total_df, x='Bus', y='Manhours',
-            title="Total manhours per bus",
-            labels={'Bus': 'Bus', 'Manhours': 'Total Manhours'},
-            color_discrete_sequence=['green'], text='Manhours'
-        )
+        fig1 = px.bar(total_df, x='Bus', y='Manhours', title="Total manhours per bus",
+                      labels={'Bus': 'Bus', 'Manhours': 'Total Manhours'},
+                      color_discrete_sequence=['green'], text='Manhours')
         fig1.update_layout(hovermode="x unified")
         st.plotly_chart(fig1, use_container_width=True)
 
@@ -59,12 +56,9 @@ if uploaded_file is not None:
         for _, row in top5.iterrows():
             st.markdown(f"• {row['Bus']}: {row['Manhours']:.1f} manhours")
 
-        st.download_button(
-            "📥  Download total manhours CSV",
-            total_df.to_csv(index=False).encode(),
-            file_name="total_manhours.csv",
-            mime='text/csv'
-        )
+        st.download_button("📥  Download total manhours CSV",
+                           total_df.to_csv(index=False).encode(),
+                           file_name="total_manhours.csv", mime='text/csv')
 
     # -------------------- TAB 2 --------------------
     with tab2:
@@ -73,12 +67,10 @@ if uploaded_file is not None:
         process_avg_df = process_avg_df[process_avg_df['Process'].str.strip() != '']
         process_avg_df = process_avg_df.sort_values(by='Avg_Time_Per_Process', ascending=False)
 
-        fig2 = px.bar(
-            process_avg_df, x='Process', y='Avg_Time_Per_Process',
-            title='Average Time per Process Across All Buses',
-            labels={'Avg_Time_Per_Process': 'Avg Time (hrs)'},
-            color_discrete_sequence=['green'], text='Avg_Time_Per_Process'
-        )
+        fig2 = px.bar(process_avg_df, x='Process', y='Avg_Time_Per_Process',
+                      title='Average Time per Process Across All Buses',
+                      labels={'Avg_Time_Per_Process': 'Avg Time (hrs)'},
+                      color_discrete_sequence=['green'], text='Avg_Time_Per_Process')
         fig2.update_layout(yaxis_range=[0, 30], xaxis_tickangle=-45, hovermode="x unified", width=1200, height=600)
         st.plotly_chart(fig2, use_container_width=True)
 
@@ -86,7 +78,6 @@ if uploaded_file is not None:
         for _, row in process_avg_df.head(7).iterrows():
             st.markdown(f"• {row['Process']}: {row['Avg_Time_Per_Process']:.1f} hrs")
 
-        # Station-specific analysis
         if 'Station' in df.columns:
             station_options = df['Station'].dropna().unique().tolist()
             if station_options:
@@ -94,27 +85,21 @@ if uploaded_file is not None:
                 station_avg_df = df[df['Station'] == selected_station][['Process', 'Avg_Time_Per_Process']]
                 station_avg_df = station_avg_df.dropna().sort_values(by='Avg_Time_Per_Process', ascending=False)
 
-                fig_station = px.bar(
-                    station_avg_df, x='Process', y='Avg_Time_Per_Process',
-                    title=f'Average Time per Process in {selected_station} Station',
-                    labels={'Avg_Time_Per_Process': 'Avg Time (hrs)'},
-                    color_discrete_sequence=['green'], text='Avg_Time_Per_Process'
-                )
+                fig_station = px.bar(station_avg_df, x='Process', y='Avg_Time_Per_Process',
+                                     title=f'Average Time per Process in {selected_station} Station',
+                                     labels={'Avg_Time_Per_Process': 'Avg Time (hrs)'},
+                                     color_discrete_sequence=['green'], text='Avg_Time_Per_Process')
                 fig_station.update_layout(xaxis_tickangle=-45, width=1200, height=600, hovermode="x unified")
                 st.plotly_chart(fig_station, use_container_width=True)
 
-        # Outlier detection
         st.subheader("🚨 Outlier Processes")
         top_var_df = df.nlargest(7, 'Variance')[['Station', 'Process']].drop_duplicates()
-        df_long_outliers = df.melt(
-            id_vars=['Station', 'Process'], value_vars=bus_columns,
-            var_name='Bus', value_name='Hours'
-        )
+        df_long_outliers = df.melt(id_vars=['Station', 'Process'], value_vars=bus_columns,
+                                   var_name='Bus', value_name='Hours')
         outliers_merged = df_long_outliers.merge(top_var_df, on=['Station', 'Process'])
         outliers_merged['Average Hours per Process'] = outliers_merged.groupby('Process')['Hours'].transform('mean')
         outliers_merged['Z_Score'] = outliers_merged.groupby('Process')['Hours'].transform(
-            lambda x: (x - x.mean()) / x.std(ddof=0)
-        )
+            lambda x: (x - x.mean()) / x.std(ddof=0))
         outliers_table_df = outliers_merged[outliers_merged['Z_Score'] > 2].sort_values(by='Z_Score', ascending=False)
 
         if outliers_table_df.empty:
@@ -122,19 +107,14 @@ if uploaded_file is not None:
         else:
             st.dataframe(outliers_table_df[['Bus', 'Station', 'Process', 'Hours', 'Average Hours per Process']])
 
-  
-        # -------------------- TAB 3 --------------------
+    # -------------------- TAB 3 --------------------
     with tab3:
         st.subheader("Human resource allocation gaps")
-
-        # Recreate staffing summary here
         staffing_summary = df.groupby(['Station', 'Process'])['Number of people'].sum().reset_index()
         st.subheader("📈 Staffing Distribution by Process and Station")
-        fig5 = px.bar(
-            staffing_summary.sort_values(by="Number of people", ascending=False),
-            x="Process", y="Number of people", color="Station",
-            title="Current Staffing by Process and Station", text="Number of people"
-        )
+        fig5 = px.bar(staffing_summary.sort_values(by="Number of people", ascending=False),
+                      x="Process", y="Number of people", color="Station",
+                      title="Current Staffing by Process and Station", text="Number of people")
         fig5.update_layout(xaxis_tickangle=-45)
         st.plotly_chart(fig5, use_container_width=True)
 
@@ -152,23 +132,18 @@ if uploaded_file is not None:
         }
         gap_df['Color'] = gap_df['Station'].map(station_colors)
 
-        fig4 = px.bar(
-            gap_df, x='Process', y='Manhours per person', color='Station',
-            title='HR Allocation Gaps by Process',
-            labels={'Manhours per person': 'Manhours/Person'},
-            category_orders={"Process": gap_df['Process'].tolist()},
-            text='Manhours per person',
-            color_discrete_map=station_colors
-        )
+        fig4 = px.bar(gap_df, x='Process', y='Manhours per person', color='Station',
+                      title='HR Allocation Gaps by Process',
+                      labels={'Manhours per person': 'Manhours/Person'},
+                      category_orders={"Process": gap_df['Process'].tolist()},
+                      text='Manhours per person',
+                      color_discrete_map=station_colors)
         fig4.update_layout(xaxis_tickangle=-45, width=1200, height=600, hovermode="x unified")
         st.plotly_chart(fig4, use_container_width=True)
 
-        st.download_button(
-            "📥  Download Human resource gaps CSV",
-            gap_df.to_csv(index=False).encode(),
-            file_name="hr_gaps.csv",
-            mime='text/csv'
-        )
+        st.download_button("📥  Download Human resource gaps CSV",
+                           gap_df.to_csv(index=False).encode(),
+                           file_name="hr_gaps.csv", mime='text/csv')
 
         st.markdown("**🚨 Top 7 Processes with highest Human resource allocation gaps:**")
         top_gap_df = gap_df.head(7)[['Station', 'Process', 'Manhours per person', 'Number of people']].reset_index(drop=True)
@@ -176,22 +151,21 @@ if uploaded_file is not None:
             'Manhours per person': '{:.2f}',
             'Number of people': '{:.0f}'
         }))
-            # -------------------- TAB 4 --------------------
+
+    # -------------------- TAB 4 --------------------
     with tab4:
         st.subheader("📊 Predictive Manpower Allocation")
 
-        # Sidebar only appears in tab4
-        with st.sidebar:
-            st.header("Prediction Parameters")
-            current_output = st.number_input("Current Monthly Output (buses)", min_value=1, value=7)
-            target_output = st.number_input("Target Monthly Output (buses)", min_value=1, value=10)
-            STU = st.number_input("Standard Time per Unit (minutes)", min_value=1, value=51840)
-            working_days = st.number_input("Working Days per Month", min_value=1, value=21)
-            hours_per_day = st.number_input("Work Hours per Day", min_value=1, value=8)
-            absenteeism_rate = st.slider("Absenteeism Rate (%)", min_value=0, max_value=20, value=5) / 100
-            indirect_ratio = st.slider("Indirect Manpower Ratio (%)", min_value=0, max_value=50, value=10) / 100
+        # Manual input within tab4
+        st.markdown("### 🔧 Prediction Parameters")
+        current_output = st.number_input("Current Monthly Output (buses)", min_value=1, value=7)
+        target_output = st.number_input("Target Monthly Output (buses)", min_value=1, value=10)
+        STU = st.number_input("Standard Time per Unit (minutes)", min_value=1, value=51840)
+        working_days = st.number_input("Working Days per Month", min_value=1, value=21)
+        hours_per_day = st.number_input("Work Hours per Day", min_value=1, value=8)
+        absenteeism_rate = st.number_input("Absenteeism Rate (%)", min_value=0, max_value=100, value=5) / 100
+        indirect_ratio = st.number_input("Indirect Manpower Ratio (%)", min_value=0, max_value=100, value=10) / 100
 
-        # Calculations
         AWH = working_days * hours_per_day
         efficiency_factor = current_output / target_output
         EHE = AWH * efficiency_factor * (1 - absenteeism_rate)
@@ -200,13 +174,12 @@ if uploaded_file is not None:
         required_indirect_manpower = required_direct_manpower * indirect_ratio
         total_required_manpower = required_direct_manpower + required_indirect_manpower
 
-        # Predicted staffing per process
         pred_staffing_summary = df.groupby(['Station', 'Process'])['Number of people'].sum().reset_index()
         pred_staffing_summary["Current_Proportion"] = pred_staffing_summary["Number of people"] / pred_staffing_summary["Number of people"].sum()
         pred_staffing_summary["Predicted_Number_of_People"] = pred_staffing_summary["Current_Proportion"] * required_direct_manpower
         pred_staffing_summary["Predicted_Number_of_People"] = pred_staffing_summary["Predicted_Number_of_People"].round(2)
 
-        st.subheader("📐 Summary of Prediction")
+        st.markdown("### 📐 Summary of Prediction")
         st.markdown(f"""
         - Current Direct Staff: **{int(current_direct_staff)}**  
         - Target Output: **{target_output} buses**  
@@ -215,13 +188,8 @@ if uploaded_file is not None:
         - **Total Required Manpower: {total_required_manpower:.2f}**
         """)
 
-        st.subheader("🔮 Predicted Staffing by Station and Process")
-        st.dataframe(pred_staffing_summary[["Station", "Process", "Number of people", "Predicted_Number_of_People"]],
-                     use_container_width=True)
-
-
+        st.markdown("### 🔮 Predicted Staffing by Station and Process")
+        st.dataframe(pred_staffing_summary[["Station", "Process", "Number of people", "Predicted_Number_of_People"]])
 
 else:
     st.info("Please upload a valid Excel file to proceed.")
-
-
