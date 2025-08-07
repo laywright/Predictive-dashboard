@@ -35,7 +35,7 @@ if uploaded_file is not None:
     avg_manhours = total_df['Manhours'].mean()
 
     # Tabs
-    tab1, tab2, tab3, tab4 = st.tabs(["Summary", "Process time analysis", "Human resource allocation gaps", "Predictive Manpower Allocation"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Summary", "Process time analysis", "Staffing distribution", "Predictive Manpower Allocation"])
 
     # -------------------- TAB 1 --------------------
     with tab1:
@@ -109,9 +109,8 @@ if uploaded_file is not None:
 
     # -------------------- TAB 3 --------------------
     with tab3:
-        st.subheader("Human resource allocation gaps")
+        st.subheader("Staffing distribution")
         staffing_summary = df.groupby(['Station', 'Process'])['Number of people'].sum().reset_index()
-        st.subheader("📈 Staffing Distribution by Process and Station")
         fig5 = px.bar(staffing_summary.sort_values(by="Number of people", ascending=False),
                       x="Process", y="Number of people", color="Station",
                       title="Current Staffing by Process and Station", text="Number of people")
@@ -133,7 +132,7 @@ if uploaded_file is not None:
         gap_df['Color'] = gap_df['Station'].map(station_colors)
 
         fig4 = px.bar(gap_df, x='Process', y='Manhours per person', color='Station',
-                      title='HR Allocation Gaps by Process',
+                      title='Manhours per person',
                       labels={'Manhours per person': 'Manhours/Person'},
                       category_orders={"Process": gap_df['Process'].tolist()},
                       text='Manhours per person',
