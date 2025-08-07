@@ -132,6 +132,14 @@ if uploaded_file is not None:
     # -------------------- TAB 3 --------------------
     with tab3:
         st.subheader("Human resource allocation gaps")
+        st.subheader("📈 Staffing Distribution by Process and Station")
+        fig5 = px.bar(
+            staffing_summary.sort_values(by="Number of people", ascending=False),
+            x="Process", y="Number of people", color="Station",
+            title="Current Staffing by Process and Station", text="Number of people"
+        )
+        fig5.update_layout(xaxis_tickangle=-45)
+        st.plotly_chart(fig5, use_container_width=True)
 
         gap_df = df[['Station', 'Process', 'Avg_Manhours', 'Number of people', 'Manhours per person']].copy()
         gap_df = gap_df.dropna(subset=['Process'])
