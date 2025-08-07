@@ -135,9 +135,7 @@ if uploaded_file is not None:
         for _, row in most_staffed.iterrows():
             st.markdown(f"- **{row['Process']}** ({row['Station']}): {row['Number of people']} people")
 
-        st.markdown("**Bottom 3 Processes with Lowest Staffing:**")
-        for _, row in least_staffed.iterrows():
-            st.markdown(f"- **{row['Process']}** ({row['Station']}): {row['Number of people']} people")
+  
 
         gap_df = df[['Station', 'Process', 'Avg_Manhours', 'Number of people', 'Manhours per person']].copy()
         gap_df = gap_df.dropna(subset=['Process'])
