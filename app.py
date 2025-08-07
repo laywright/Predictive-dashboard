@@ -119,13 +119,26 @@ if uploaded_file is not None:
             'Body': 'orange',
             'Metal Finish': 'teal'
         }
-        
+
         fig5 = px.bar(staffing_summary.sort_values(by="Number of people", ascending=False),
                       x="Process", y="Number of people", color="Station",
                       title="Current Staffing by Process and Station", text="Number of people",
                       color_discrete_map=station_colors)
         fig5.update_layout(xaxis_tickangle=-45)
         st.plotly_chart(fig5, use_container_width=True)
+
+        # 👇 New insights block here
+        st.markdown("### 🔍 Insights from Current Staffing Distribution")
+        most_staffed = staffing_summary.sort_values(by='Number of people', ascending=False).head(3)
+        least_staffed = staffing_summary.sort_values(by='Number of people').head(3)
+
+        st.markdown("**Top 3 Processes with Highest Staffing:**")
+        for _, row in most_staffed.iterrows():
+            st.markdown(f"- **{row['Process']}** ({row['Station']}): {row['Number of people']} people")
+
+        st.markdown("**Bottom 3 Processes with Lowest Staffing:**")
+        for _, row in least_staffed.iterrows():
+            st.markdown(f"- **{row['Process']}** ({row['Station']}): {row['Number of people']} people")
 
         gap_df = df[['Station', 'Process', 'Avg_Manhours', 'Number of people', 'Manhours per person']].copy()
         gap_df = gap_df.dropna(subset=['Process'])
@@ -189,7 +202,8 @@ if uploaded_file is not None:
         """)
 
         st.markdown("### Predicted Staffing by Station and Process")
-        st.dataframe(pred_staffing_summary[["Station", "Process", "Number of people", "Predicted_Number_of_People"]])
+        sorted_pred_df = pred_staffing_summary.sort_values(by="Predicted_Number_of_People", ascending=False)
+        st.dataframe(sorted_pred_df[["Station", "Process", "Number of people", "Predicted_Number_of_People"]])
 
 else:
     st.info("Please upload a valid Excel file to proceed.")
