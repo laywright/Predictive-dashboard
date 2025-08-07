@@ -24,7 +24,6 @@ if uploaded_file is not None:
     df['Number of people'] = pd.to_numeric(df.get('Number of people', pd.Series(dtype=float)), errors='coerce')
 
     # Extract bus columns excluding Bus 21–24
-    bus_columns = [col for col in df.columns if str(col).startswith('Bus') and col not in ['Bus 21', 'Bus 22', 'Bus 23', 'Bus 24']]
     df['Avg_Time_Per_Process'] = df[bus_columns].mean(axis=1)
     df['Variance'] = df[bus_columns].var(axis=1)
     df['Avg_Manhours'] = df[bus_columns].mean(axis=1)
