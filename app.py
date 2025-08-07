@@ -128,9 +128,8 @@ if uploaded_file is not None:
         st.plotly_chart(fig5, use_container_width=True)
 
         # 🔍 Insights section
-        st.markdown("### 🔍 Insights from Current Staffing Distribution")
-        most_staffed = staffing_summary.sort_values(by='Number of people', ascending=False).head(3)
-        least_staffed = staffing_summary.sort_values(by='Number of people').head(3)
+        st.markdown("###  Insights from Current Staffing Distribution")
+        most_staffed = staffing_summary.sort_values(by='Number of people', ascending=False).head(4)
 
         st.markdown("**Top 3 Processes with Highest Staffing:**")
         for _, row in most_staffed.iterrows():
